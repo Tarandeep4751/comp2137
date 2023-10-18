@@ -103,8 +103,5 @@ echo "Listening Network Ports: $listening_ports_info"
 ufw_rules_info=$(sudo ufw show added | awk '/[0-9]+\/[a-z]+/ {print $1}' | tr '\n' ', ')
 echo "UFW Rules: $ufw_rules_info"
 
-# Script description
-echo -e "\nThe purpose of this script is to display important system information concisely and clearly, making it accessible to any user without requiring them to use multiple commands or understand command options."
-
 # End of report
 echo -e "\n"
