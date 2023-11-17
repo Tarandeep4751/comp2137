@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 # Function to check if a package is installed
 is_package_installed() {
@@ -13,11 +13,8 @@ display_error() {
 
 # Function to update netplan configuration
 update_netplan() {
-    # Check if the netplan configuration needs to be updated
-    if [ "$(grep -c '192.168.16.21/24' /etc/netplan/*.yaml)" -eq 0 ]; then
-        echo "Updating netplan configuration..."
         # Update netplan configuration
-        # This assumes there is a netplan configuration file in /etc/netplan/
+
         sed -i 's/.*addresses:.*/      addresses: [192.168.16.21\/24]/' /etc/netplan/*.yaml
         sed -i 's/.*gateway4:.*/      gateway4: 192.168.16.1/' /etc/netplan/*.yaml
         sed -i 's/.*nameservers:.*/      nameservers: [192.168.16.1]/' /etc/netplan/*.yaml
@@ -28,48 +25,11 @@ update_netplan() {
         echo "Netplan configuration is already up to date."
     fi
 }
-
-# Update system and install required packages
+*# Update system and install required packages
 display_message "Updating system and installing required packages..."
 apt-get update || display_error "Failed to update the system."
-apt-# Function to configure and enable services
-configure_services() {
-    # Configure OpenSSH server
-    sed -i 's/.*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
-    systemctl restart ssh
+apt-get install -y openssh-server apache2 squid ufw || display_error
 
-    # Configure Apache2 server
-      systemctl restart apache2
-
-    # Configure Squid proxy
-      systemctl restart squid
-
-    # Configure UFW
-    ufw allow 22
-    ufw allow 80
-    ufw allow 443
-    ufw allow 3128
-    ufw --force enable
-}
-
-# Function to create or update user accounts
-create_users() {
-    users=("dennis" "aubrey" "captain" "snibbles" "brownie" "scooter" "sandy" "perrier" "cindy" "tiger" "yoda")
-
-    for user in "${users[@]}"; do
-        if is_user_exists "$user"; then
-            echo "$user already exists."
-        else
-            echo "Creating user $user..."
-            useradd -m -s /bin/bash "$user"
-            # Add user to sudo group if it is dennis
-            [ "$user" == "dennis" ] && usermod -aG sudo "$user"
-        fi
-
-        # Set up SSH keys for users
-        user_home="/home/$user"
-        mkdir -p "$user_home/.ssh"
-get install -y openssh-server apache2 squid ufw || display_error
 # Function to configure and enable services
 configure_services() {
     # Configure OpenSSH server
@@ -94,21 +54,20 @@ configure_services() {
 create_users() {
     users=("dennis" "aubrey" "captain" "snibbles" "brownie" "scooter" "sandy" "perrier" "cindy" "tiger" "yoda")
 
-    for user in "${users[@]}"; do
-        if is_user_exists "$user"; then
-            echo "$user already exists."
-        else
-            echo "Creating user $user..."
+
+echo "Creating user $user..."
             useradd -m -s /bin/bash "$user"
             # Add user to sudo group if it is dennis
             [ "$user" == "dennis" ] && usermod -aG sudo "$user"
-        fi
 
         # Set up SSH keys for users
         user_home="/home/$user"
         mkdir -p "$user_home/.ssh"
         echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG4rT3vTt99Ox5kndS4HmgTrKBT8SKzhK4rhGkEVGlCI student@generic-vm" >> "$user_home/.ssh/authorized_keys"
-done
+        # Additional SSH key configurations can be added here
+    done
 }
+
 echo "Script execution completed."
+
 
