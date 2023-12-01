@@ -1,0 +1,75 @@
+#!/bin/bash
+
+TARGET1_MGMT="remoteadmin@target1-mgmt"
+TARGET1_HOSTNAME="loghost"
+TARGET1_IP_OLD="172.16.1.10"
+TARGET1_IP_NEW="172.16.1.3"
+WEBHOST_IP="172.16.1.4"
+
+TARGET2_MGMT="remoteadmin@target2-mgmt"
+TARGET2_HOSTNAME="webhost"
+TARGET2_IP_OLD="172.16.1.11"
+TARGET2_IP_NEW="172.16.1.4"
+LOGHOST_IP="172.16.1.3"
+
+# Function to execute commands on a target machine
+execute_command() {
+    ssh $1 $2
+}
+
+# Task 1: Change system name from target1 to loghost
+echo "Task 1: Change system name from target1 to $TARGET1_HOSTNAME"
+execute_command $TARGET1_MGMT "sudo hostnamectl set-hostname $TARGET1_HOSTNAME"
+execute_command $TARGET1_MGMT "sudo sed -i 's/target1/$TARGET1_HOSTNAME/' /etc/hosts"
+
+# Task 2: Change IP address from $TARGET1_IP_OLD to $TARGET1_IP_NEW on the lan
+echo -e "\nTask 2: Change IP address from $TARGET1_IP_OLD to $TARGET1_IP_NEW on the lan"
+execute_command $TARGET1_MGMT "sudo ip addr del $TARGET1_IP_OLD/24 dev eth0"
+execute_command $TARGET1_MGMT "sudo ip addr add $TARGET1_IP_NEW/24 dev eth0"
+
+# Task 3: Add a machine named webhost to /etc/hosts as $WEBHOST_IP on the lan
+echo -e "\nTask 3: Add a machine named webhost to /etc/hosts as $WEBHOST_IP on the lan"
+execute_command $TARGET1_MGMT "echo '$WEBHOST_IP webhost' | sudo tee -a /etc/hosts"
+
+# Task 4: Install UFW if necessary and allow connections to port 514/udp from the mgmt network
+echo -e "\nTask 4: Install UFW if necessary and allow connections to port 514/udp from the mgmt network"
+execute_command $TARGET1_MGMT "sudo apt-get update && sudo apt-get install -y ufw"
+execute_command $TARGET1_MGMT "sudo ufw allow from 172.16.1.0/24 to any port 514/udp"
+
+# Task 5: Configure rsyslog to listen for UDP connections
+echo -e "\nTask 5: Configure rsyslog to listen for UDP connections"
+execute_command $TARGET1_MGMT "sudo sed -i 's/#module(load=\"imudp\")/module(load=\"imudp\")/' /etc/rsyslog.conf"
+execute_command $TARGET1_MGMT "sudo sed -i 's/#input(type=\"imudp\"/input(type=\"imudp\"/' /etc/rsyslog.conf"
+
+# Task 6: Restart the rsyslog service
+echo -e "\nTask 6: Restart the rsyslog service"
+execute_command $TARGET1_MGMT "sudo systemctl restart rsyslog"
+
+# Task 7: Change system name from target2 to webhost
+echo -e "\nTask 7: Change system name from target2 to $TARGET2_HOSTNAME"
+execute_command $TARGET2_MGMT "sudo hostnamectl set-hostname $TARGET2_HOSTNAME"
+execute_command $TARGET2_MGMT "sudo sed -i 's/target2/$TARGET2_HOSTNAME/' /etc/hosts"
+
+# Task 8: Change IP address from $TARGET2_IP_OLD to $TARGET2_IP_NEW on the lan
+echo -e "\nTask 8: Change IP address from $TARGET2_IP_OLD to $TARGET2_IP_NEW on the lan"
+execute_command $TARGET2_MGMT "sudo ip addr del $TARGET2_IP_OLD/24 dev eth0"
+execute_command $TARGET2_MGMT "sudo ip addr add $TARGET2_IP_NEW/24 dev eth0"
+
+# Task 9: Add a machine named loghost to /etc/hosts as $LOGHOST_IP on the lan
+echo -e "\nTask 9: Add a machine named loghost to /etc/hosts as $LOGHOST_IP on the lan"
+execute_command $TARGET2_MGMT "echo '$LOGHOST_IP loghost' | sudo tee -a /etc/hosts"
+
+# Task 10: Install UFW if necessary and allow connections to port 80/tcp from anywhere
+echo -e "\nTask 10: Install UFW if necessary and allow connections to port 80/tcp from anywhere"
+execute_command $TARGET2_MGMT "sudo apt-get update && sudo apt-get install -y ufw"
+execute_command $TARGET2_MGMT "sudo ufw allow 80/tcp"
+
+# Task 11: Install apache2 in its default configuration
+echo -e "\nTask 11: Install apache2 in its default configuration"
+execute_command $TARGET2_MGMT "sudo apt-get install -y apache2"
+
+# Task 12: Configure rsyslog on webhost to send logs to loghost
+echo -e "\nTask 12: Configure rsyslog on $TARGET2_HOSTNAME to send logs to loghost"
+execute_command $TARGET2_MGMT "echo '*.* @$LOGHOST_IP' | sudo tee -a /etc/rsyslog.conf"
+
+echo "System name, IP address, webhost, UFW, and rsyslog configured on $TARGET1_HOSTNAME and $TARGET2_HOSTNAME."
