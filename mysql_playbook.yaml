@@ -1,0 +1,6 @@
+# mysql_playbook.yaml
+- name: install MySQL on target2
+  hosts: target2
+  remote_user: remoteadmin
+  tasks:
+    # Add tasks for installing MySQL and configuring UFW for SSH and MySQL
