@@ -1,0 +1,6 @@
+# apache_playbook.yaml
+- name: install Apache2 on target1
+  hosts: target1
+  remote_user: remoteadmin
+  tasks:
+    # Add tasks for installing Apache2 and configuring UFW for SSH and HTTP
